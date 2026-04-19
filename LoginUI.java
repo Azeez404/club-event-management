@@ -1,3 +1,4 @@
+import java.sql.*;
 import javax.swing.*;
 
 public class LoginUI {
@@ -22,8 +23,10 @@ public class LoginUI {
 
         login.setBounds(120, 160, 100, 40);
 
-        f.add(userL); f.add(user);
-        f.add(passL); f.add(pass);
+        f.add(userL);
+        f.add(user);
+        f.add(passL);
+        f.add(pass);
         f.add(login);
 
         f.setSize(350, 250);
@@ -33,14 +36,36 @@ public class LoginUI {
         f.setVisible(true);
 
         login.addActionListener(e -> {
-            String u = user.getText();
+            String u = user.getText().trim();
             String p = new String(pass.getPassword());
 
-            if (u.equals("admin") && p.equals("admin")) {
-                f.dispose();
-                new Dashboard();
-            } else {
-                JOptionPane.showMessageDialog(f, "Invalid Login");
+            if (u.isEmpty() || p.isEmpty()) {
+                JOptionPane.showMessageDialog(f, "Please enter username and password.");
+                return;
+            }
+
+            try {
+                Connection conn = DBConnection.getConnection();
+
+                PreparedStatement ps = conn.prepareStatement(
+                    "SELECT * FROM users WHERE username = ? AND password = ?"
+                );
+                ps.setString(1, u);
+                ps.setString(2, p);
+
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    f.dispose();
+                    new Dashboard();
+                } else {
+                    JOptionPane.showMessageDialog(f, "Invalid username or password.");
+                }
+
+                conn.close();
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(f, "DB Error: " + ex.getMessage());
             }
         });
     }
